@@ -5,6 +5,7 @@ import com.tiket.poc.mongo.entity.EndpointType;
 import com.tiket.poc.mongo.entity.FilterType;
 import com.tiket.poc.mongo.entity.OriginScheduleFilter;
 import com.tiket.poc.mongo.entity.RouteEndpoint;
+import com.tiket.poc.mongo.entity.RouteScheduleFilter;
 import com.tiket.poc.mongo.entity.TemplateDefinition;
 import com.tiket.poc.mongo.entity.TrainRoute;
 import com.tiket.poc.mongo.entity.TrainScheduleFilter;
@@ -87,6 +88,32 @@ class TemplateDefinitionRepositoryTests {
           assertThat(persisted.getScheduleFilter().getType()).isEqualTo(FilterType.ORIGIN);
           assertThat(persisted.getScheduleFilter().getValue()).isEqualToComparingFieldByField(template.getScheduleFilter().getValue());
           assertThat(((OriginScheduleFilter) persisted.getScheduleFilter()).getDestinations()).hasSize(1);
+        })
+        .expectComplete()
+        .verify(Duration.ofSeconds(15));
+  }
+
+  @Test
+  void whenPersistTemplateWithRouteFilter_thenShouldConsistent() {
+    TemplateDefinition template = TemplateDefinition.builder()
+        .scheduleFilter(RouteScheduleFilter.builder()
+            .value(TrainRoute.builder()
+                .originCode("GMR").originType(EndpointType.STATION)
+                .destinationCode("BD").destinationType(EndpointType.STATION)
+                .build())
+            .build()
+        )
+        .build();
+
+    Mono<TemplateDefinition> testStream = templateRepository.save(template)
+        .flatMap(persisted -> templateRepository.findById(persisted.getId()));
+
+    StepVerifier.create(testStream)
+        .expectSubscription().thenAwait()
+        .assertNext(persisted -> {
+          assertThat(persisted.getScheduleFilter()).isInstanceOf(RouteScheduleFilter.class);
+          assertThat(persisted.getScheduleFilter().getType()).isEqualTo(FilterType.ROUTE);
+          assertThat(persisted.getScheduleFilter().getValue()).isEqualToComparingFieldByField(template.getScheduleFilter().getValue());
         })
         .expectComplete()
         .verify(Duration.ofSeconds(15));

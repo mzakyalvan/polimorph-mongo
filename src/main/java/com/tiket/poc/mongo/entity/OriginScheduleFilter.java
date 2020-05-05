@@ -14,7 +14,7 @@ public class OriginScheduleFilter extends ScheduleFilter<RouteEndpoint> {
 
   @PersistenceConstructor
   @lombok.Builder(builderClassName = "Builder")
-  public OriginScheduleFilter(RouteEndpoint value, List<RouteEndpoint> destinations) {
+  OriginScheduleFilter(RouteEndpoint value, List<RouteEndpoint> destinations) {
     super(FilterType.ORIGIN, value);
     this.destinations = destinations;
   }
